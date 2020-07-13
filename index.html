@@ -1,105 +1,115 @@
-<div style="display: block; text-align: center;">
-  <div id="canvas"></div>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div style="display: block; text-align: center;">
+      <div id="canvas"></div>
 
-  <p id="interim"></p>
+      <p id="interim"></p>
 
-  <button id="start_button">
-    <img id="start_img" src="images/mic.gif" alt="start" />
-  </button>
-</div>
+      <button id="start_button">
+        <img id="start_img" src="images/mic.gif" alt="start" />
+      </button>
+    </div>
 
-<script>
-  if ("webkitSpeechRecognition" in window) {
-    // speech recognition API supported
-    function processResult(result) {
-      recognition.stop();
-      console.log(result);
-      var size = 0;
-      var shape = null;
-      var color = null;
-      result = result.toLowerCase().split(" ");
-      result.forEach((subStr) => {
-        if (shape && size && color) {
-          return;
-        } else if (!isNaN(subStr)) {
-          size = subStr;
-        } else if (["square", "circle"].indexOf(subStr) > -1) {
-          shape = subStr;
-        } else if (
-          ["red", "green", "black", "blue", "yellow"].indexOf(subStr) > -1
-        ) {
-          color = subStr;
+    <script>
+      if ("webkitSpeechRecognition" in window) {
+        // speech recognition API supported
+        function processResult(result) {
+          recognition.stop();
+          console.log(result);
+          var size = 0;
+          var shape = null;
+          var color = null;
+          result = result.toLowerCase().split(" ");
+          result.forEach((subStr) => {
+            if (shape && size && color) {
+              return;
+            } else if (!isNaN(subStr)) {
+              size = subStr;
+            } else if (["square", "circle"].indexOf(subStr) > -1) {
+              shape = subStr;
+            } else if (
+              ["red", "green", "black", "blue", "yellow"].indexOf(subStr) > -1
+            ) {
+              color = subStr;
+            }
+          });
+          console.log(size, shape);
+          if (!shape) {
+            alert("Couldn't recognize. Please try again");
+          } else {
+            canvas.style.width = `${size}px`;
+            canvas.style.height = `${size}px`;
+            canvas.style.backgroundColor = `${color || "black"}`;
+            if (shape == "circle") {
+              canvas.style.width = `${size * 2}px`;
+              canvas.style.height = `${size * 2}px`;
+              canvas.style.borderRadius = "50%";
+            }
+          }
         }
-      });
-      console.log(size, shape);
-      if (!shape) {
-        alert("Couldn't recognize. Please try again");
+
+        var recognition = new webkitSpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.onresult = function (event) {
+          var interim_transcript = "";
+          for (var i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              final_transcript += event.results[i][0].transcript;
+            } else {
+              interim_transcript += event.results[i][0].transcript;
+            }
+          }
+          interim.innerHTML = interim_transcript;
+          if (final_transcript.length > 0) {
+            processResult(final_transcript);
+          }
+        };
+
+        recognition.onerror = function (event) {
+          start_img.src = "images/mic.gif";
+          // alert("Error: ", event.error);
+          //   if (event.error == 'no-speech') {
+          //     start_img.src = 'assets/mic.gif';
+          //     showInfo('no_speech');
+          //     ignore_onend = true;
+          //   }
+          //   if (event.error == 'audio-capture') {
+          //     start_img.src = 'assets/mic.gif';
+          //     showInfo('no_microphone');
+          //     ignore_onend = true;
+          //   }
+          //   if (event.error == 'not-allowed') {
+          //     if (event.timeStamp - start_timestamp < 100) {
+          //       showInfo('blocked');
+          //     } else {
+          //       showInfo('denied');
+          //     }
+          //     ignore_onend = true;
+          //   }
+        };
+
+        recognition.onend = function () {
+          start_img.src = "images/mic.gif";
+        };
+
+        start_button.addEventListener("click", function () {
+          canvas.removeAttribute("style");
+          // showInfo('speak_now');
+          start_img.src = "images/mic-animation.gif";
+          final_transcript = "";
+          recognition.start();
+        });
       } else {
-        canvas.style.width = `${size}px`;
-        canvas.style.height = `${size}px`;
-        canvas.style.backgroundColor = `${color || "black"}`;
-        if (shape == "circle") {
-          canvas.style.width = `${size * 2}px`;
-          canvas.style.height = `${size * 2}px`;
-          canvas.style.borderRadius = "50%";
-        }
+        // speech recognition API not supported
+        // upgrade();
       }
-    }
-
-    var recognition = new webkitSpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.onresult = function (event) {
-      var interim_transcript = "";
-      for (var i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          final_transcript += event.results[i][0].transcript;
-        } else {
-          interim_transcript += event.results[i][0].transcript;
-        }
-      }
-      interim.innerHTML = interim_transcript;
-      if (final_transcript.length > 0) {
-        processResult(final_transcript);
-      }
-    };
-
-    recognition.onerror = function (event) {
-      start_img.src = "images/mic.gif";
-      // alert("Error: ", event.error);
-      //   if (event.error == 'no-speech') {
-      //     start_img.src = 'assets/mic.gif';
-      //     showInfo('no_speech');
-      //     ignore_onend = true;
-      //   }
-      //   if (event.error == 'audio-capture') {
-      //     start_img.src = 'assets/mic.gif';
-      //     showInfo('no_microphone');
-      //     ignore_onend = true;
-      //   }
-      //   if (event.error == 'not-allowed') {
-      //     if (event.timeStamp - start_timestamp < 100) {
-      //       showInfo('blocked');
-      //     } else {
-      //       showInfo('denied');
-      //     }
-      //     ignore_onend = true;
-      //   }
-    };
-
-    recognition.onend = function () {
-      start_img.src = "images/mic.gif";
-    };
-
-    start_button.addEventListener("click", function () {
-      canvas.removeAttribute("style");
-      // showInfo('speak_now');
-      start_img.src = "images/mic-animation.gif";
-      final_transcript = "";
-      recognition.start();
-    });
-  } else {
-    // speech recognition API not supported
-    // upgrade();
-  }
-</script>
+    </script>
+  </body>
+</html>
